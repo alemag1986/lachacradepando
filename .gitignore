@@ -1,0 +1,10 @@
+/.env
+/.env.*
+!/.env.example
+/target/
+/data/
+/backups/
+*.db
+*.db-shm
+*.db-wal
+.DS_Store
