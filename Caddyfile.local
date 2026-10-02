@@ -1,0 +1,18 @@
+:80 {
+	@health path /health
+	handle @health {
+		reverse_proxy woodshop:8080
+	}
+
+	@telegram_webhook path /telegram/webhook
+	handle @telegram_webhook {
+		reverse_proxy woodshop:8080
+	}
+
+	handle {
+		basic_auth {
+			{$CADDY_ADMIN_USER} {$CADDY_ADMIN_PASSWORD_HASH}
+		}
+		reverse_proxy woodshop:8080
+	}
+}

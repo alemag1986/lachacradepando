@@ -8,3 +8,8 @@
 *.db-shm
 *.db-wal
 .DS_Store
+__pycache__/
+/.env.setup.tmp
+/.local-data/
+/data-pre-restore-*/
+/data-failed-restore-*/

@@ -1,0 +1,60 @@
+services:
+  woodshop:
+    build:
+      context: .
+    restart: unless-stopped
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      APP_ENV: production
+      APP_PORT: "8080"
+      APP_BIND_HOST: 0.0.0.0
+      DATABASE_URL: sqlite:/data/woodshop.db
+      DATA_DIR: /data
+    volumes:
+      - ./data:/data
+    expose:
+      - "8080"
+    networks:
+      - internal
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=16m
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://127.0.0.1:8080/health"]
+      interval: 30s
+      timeout: 5s
+      start_period: 30s
+      retries: 3
+
+  caddy:
+    image: caddy:2.10.2-alpine
+    restart: unless-stopped
+    environment:
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:?set PUBLIC_BASE_URL in .env}
+      CADDY_ADMIN_USER: ${CADDY_ADMIN_USER:?set CADDY_ADMIN_USER in .env}
+      CADDY_ADMIN_PASSWORD_HASH: ${CADDY_ADMIN_PASSWORD_HASH:?set CADDY_ADMIN_PASSWORD_HASH in .env}
+    depends_on:
+      woodshop:
+        condition: service_healthy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - internal
+    security_opt:
+      - no-new-privileges:true
+
+networks:
+  internal:
+
+volumes:
+  caddy_data:
+  caddy_config:

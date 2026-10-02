@@ -20,8 +20,15 @@ impl Config {
     pub fn from_env() -> anyhow::Result<Self> {
         let get = |key: &str, default: &str| env::var(key).unwrap_or_else(|_| default.into());
         let ids = |key: &str| -> anyhow::Result<Vec<i64>> {
-            get(key, "").split(',').filter(|s| !s.trim().is_empty())
-                .map(|s| s.trim().parse().map_err(|_| anyhow::anyhow!("Invalid ID in {key}"))).collect()
+            get(key, "")
+                .split(',')
+                .filter(|s| !s.trim().is_empty())
+                .map(|s| {
+                    s.trim()
+                        .parse()
+                        .map_err(|_| anyhow::anyhow!("Invalid ID in {key}"))
+                })
+                .collect()
         };
         let config = Self {
             app_env: get("APP_ENV", "development"),
@@ -37,12 +44,40 @@ impl Config {
             public_base_url: get("PUBLIC_BASE_URL", "http://localhost:8080"),
             data_dir: get("DATA_DIR", "data"),
         };
+        let public_url = reqwest::Url::parse(&config.public_base_url)
+            .map_err(|_| anyhow::anyhow!("PUBLIC_BASE_URL must be a valid HTTP origin"))?;
+        anyhow::ensure!(
+            matches!(public_url.scheme(), "http" | "https")
+                && public_url.host_str().is_some()
+                && public_url.username().is_empty()
+                && public_url.password().is_none()
+                && public_url.query().is_none()
+                && public_url.fragment().is_none()
+                && public_url.path() == "/",
+            "PUBLIC_BASE_URL must be an HTTP origin without credentials, path, query, or fragment"
+        );
         if config.app_env == "production" {
-            anyhow::ensure!(!config.telegram_bot_token.is_empty(), "TELEGRAM_BOT_TOKEN required");
-            anyhow::ensure!(config.telegram_webhook_secret.len() >= 32 && config.telegram_webhook_secret.bytes().all(|c| c.is_ascii_alphanumeric() || c == b'_' || c == b'-'), "Valid webhook secret of at least 32 characters required");
-            anyhow::ensure!(!config.telegram_allowed_user_ids.is_empty(), "Allowed Telegram users required");
-            anyhow::ensure!(!config.openrouter_api_key.is_empty(), "OPENROUTER_API_KEY required");
-            anyhow::ensure!(config.public_base_url.starts_with("https://"), "HTTPS public URL required");
+            anyhow::ensure!(
+                !config.telegram_bot_token.is_empty(),
+                "TELEGRAM_BOT_TOKEN required"
+            );
+            anyhow::ensure!(
+                config.telegram_webhook_secret.len() >= 32
+                    && config
+                        .telegram_webhook_secret
+                        .bytes()
+                        .all(|c| c.is_ascii_alphanumeric() || c == b'_' || c == b'-'),
+                "Valid webhook secret of at least 32 characters required"
+            );
+            anyhow::ensure!(
+                !config.telegram_allowed_user_ids.is_empty(),
+                "Allowed Telegram users required"
+            );
+            anyhow::ensure!(
+                !config.openrouter_api_key.is_empty(),
+                "OPENROUTER_API_KEY required"
+            );
+            anyhow::ensure!(public_url.scheme() == "https", "HTTPS public URL required");
         }
         Ok(config)
     }

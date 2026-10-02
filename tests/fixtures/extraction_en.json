@@ -1,0 +1,5 @@
+{
+  "customer": {"name":"Alex Morgan","phone":null,"email":"alex@example.com","address":"10 Oak St","preferred_language":"en","notes":null},
+  "order": {"description":"Rustic oak dining table","requested_delivery_date":null,"items":[{"product_type":"Dining table","description":"Rustic oak dining table","quantity":1,"length":null,"width":null,"height":null,"dimension_unit":null,"wood_species":"Oak","finish":null,"notes":"Customer did not specify dimensions"}]},
+  "missing_fields": ["dimensions"]
+}

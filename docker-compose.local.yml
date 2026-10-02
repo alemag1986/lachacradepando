@@ -1,0 +1,52 @@
+services:
+  woodshop:
+    build:
+      context: .
+    restart: unless-stopped
+    environment:
+      APP_ENV: development
+      APP_PORT: "8080"
+      APP_BIND_HOST: 0.0.0.0
+      DATABASE_URL: sqlite:/data/woodshop.db
+      DATA_DIR: /data
+      TELEGRAM_BOT_TOKEN: ""
+      TELEGRAM_WEBHOOK_SECRET: ""
+      TELEGRAM_ALLOWED_USER_IDS: ""
+      TELEGRAM_ALLOWED_CHAT_IDS: ""
+      OPENROUTER_API_KEY: ""
+      OPENROUTER_MODEL: google/gemma-4-26b-a4b-it:free
+      OPENROUTER_FALLBACK_MODEL: qwen/qwen3.5-35b-a3b
+      PUBLIC_BASE_URL: http://localhost:8088
+      RUST_LOG: info
+    volumes:
+      - ${LOCAL_DATA_DIR:-./.local-data}:/data
+    expose:
+      - "8080"
+    networks:
+      - local
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://127.0.0.1:8080/health"]
+      interval: 30s
+      timeout: 5s
+      start_period: 30s
+      retries: 3
+
+  caddy:
+    image: caddy:2.10.2-alpine
+    restart: unless-stopped
+    environment:
+      PUBLIC_BASE_URL: http://localhost:8088
+      CADDY_ADMIN_USER: ${CADDY_ADMIN_USER:-demo}
+      CADDY_ADMIN_PASSWORD_HASH: '$$2a$$14$$lEaB5k0rUhP1tMddXy0xvOTiivuatFLRQbWxw1T8ItR2O/.FJWyVa'
+    depends_on:
+      woodshop:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8088:80"
+    volumes:
+      - ./Caddyfile.local:/etc/caddy/Caddyfile:ro
+    networks:
+      - local
+
+networks:
+  local:

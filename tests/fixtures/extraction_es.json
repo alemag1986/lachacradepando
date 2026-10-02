@@ -1,0 +1,5 @@
+{
+  "customer": {"name":"Juan Perez","phone":"8325551212","email":null,"address":null,"preferred_language":"es","notes":null},
+  "order": {"description":"Mesa rústica de roble con acabado oscuro","requested_delivery_date":"2026-11-15","items":[{"product_type":"Mesa","description":"Mesa rústica","quantity":1,"length":84,"width":40,"height":null,"dimension_unit":"in","wood_species":"Roble","finish":"Oscuro","notes":null}]},
+  "missing_fields": ["height"]
+}

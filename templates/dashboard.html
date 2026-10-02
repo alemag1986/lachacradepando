@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Workshop overview · Carpintería{% endblock %}
+{% block content %}
+<div class="page-heading"><div><p class="eyebrow">YOUR WORKSHOP, AT A GLANCE</p><h1>Good morning.</h1><p class="lede">Here’s what’s moving through the shop.</p></div><a class="button primary" href="/orders">View all orders <span>→</span></a></div>
+<section class="stats" aria-label="Order summary">
+<a class="stat-card" href="/orders?status=NEW"><span class="stat-label">NEW ORDERS</span><strong>{{ counts.new_count }}</strong><span class="stat-note">Ready for confirmation</span></a>
+<a class="stat-card" href="/orders?status=IN_PRODUCTION"><span class="stat-label">IN PRODUCTION</span><strong>{{ counts.production_count }}</strong><span class="stat-note">Taking shape in the shop</span></a>
+<a class="stat-card" href="/orders?status=READY"><span class="stat-label">READY</span><strong>{{ counts.ready_count }}</strong><span class="stat-note">Finished and waiting</span></a>
+<a class="stat-card" href="/deliveries"><span class="stat-label">DELIVERED THIS WEEK</span><strong>{{ counts.delivered_week }}</strong><span class="stat-note">Out the door with care</span></a>
+<a class="stat-card alert" href="/orders"><span class="stat-label">PAST DUE</span><strong>{{ counts.overdue }}</strong><span class="stat-note">Orders past promised date</span></a>
+</section>
+<section class="panel"><div class="section-head"><div><p class="eyebrow">THE WORK IN FRONT OF YOU</p><h2>Recent orders</h2></div><a class="text-link" href="/orders">See all orders →</a></div>
+{% if recent.is_empty() %}<div class="empty"><span>✳</span><h3>A clear bench.</h3><p>New orders will show up here when they arrive.</p></div>{% else %}<div class="table-wrap"><table><thead><tr><th>ORDER</th><th>CUSTOMER</th><th>PROJECT</th><th>STATUS</th><th>DUE DATE</th></tr></thead><tbody>{% for order in recent %}<tr><td><a class="order-number" href="/orders/{{ order.id }}">#{{ order.id }}</a></td><td>{{ order.customer() }}</td><td>{{ order.description.as_deref().unwrap_or("—") }}</td><td><span class="badge {{ order.status|lower }}">{{ order.status.replace("_", " ") }}</span></td><td>{{ order.due_date() }}</td></tr>{% endfor %}</tbody></table></div>{% endif %}
+</section>{% endblock %}
