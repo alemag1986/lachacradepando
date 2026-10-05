@@ -69,3 +69,18 @@ Restore with `./scripts/restore.sh /absolute/path/to/backups/woodshop-YYYYMMDDTH
 ## CI
 
 GitHub Actions runs `cargo fmt --check`, `cargo clippy --locked -- -D warnings`, `cargo test --locked`, `cargo build --locked --release`, and a Docker image build. Test AI inputs use fixtures; CI does not call OpenRouter.
+
+## Public repository safety
+
+Keep credentials in the ignored `.env`, never in source, examples, screenshots,
+issues or transcripts. `.env.example` must contain empty credential fields.
+Deployment keys and release bundles in `.deploy/`, databases, customer photos and
+backups are private and must not be attached to public releases. Environment files,
+private key files and exported release/backup bundles are also excluded from Docker
+build contexts. The documented local demo password is intentionally public and must
+never be reused for production.
+
+Before publishing, scan staged files and all Git history for secrets; ignore rules
+do not remove files already committed. If a credential is exposed, revoke/rotate it
+before cleaning the history. Do not publish raw setup conversations: these can
+contain credentials even when the repository does not.

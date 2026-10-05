@@ -1,6 +1,7 @@
-/.env
-/.env.*
-!/.env.example
+# Private environment files at any depth; only empty examples are public.
+.env
+.env.*
+!.env.example
 /target/
 /data/
 /backups/
@@ -14,3 +15,16 @@ __pycache__/
 /data-pre-restore-*/
 /data-failed-restore-*/
 /.deploy/
+
+# Private keys and exported deployment/backup bundles.
+.ssh/
+.aws/
+id_rsa
+id_ed25519
+*.key
+*.pem
+*.p12
+*.pfx
+*.ppk
+release-*.tar.gz
+woodshop-*.tar.gz
