@@ -13,3 +13,4 @@ __pycache__/
 /.local-data/
 /data-pre-restore-*/
 /data-failed-restore-*/
+/.deploy/

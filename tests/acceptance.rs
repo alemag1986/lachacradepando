@@ -92,9 +92,50 @@ async fn order_delivery_photos_and_history_survive_reopening_database() {
                 .contains("frame-ancestors 'none'")
         );
         let body = response.into_body().collect().await.unwrap().to_bytes();
+        let html = String::from_utf8(body.to_vec()).unwrap();
+        if path != "/health" {
+            assert!(html.contains("lang=\"es\""), "failed {path}");
+            assert!(html.contains("La Chacra de Pando"));
+            assert!(html.contains("Navegación principal"));
+        }
+        if path == "/orders" {
+            assert!(html.contains(&format!("Ver detalles del pedido #{order_id}")));
+            assert!(html.contains(&format!("hx-target=\"#order-preview-{order_id}\"")));
+            assert!(html.contains(&format!("hx-select=\"#order-detail-{order_id}\"")));
+            for (value, label) in [
+                ("NEW", "Nuevo"),
+                ("CONFIRMED", "Confirmado"),
+                ("IN_PRODUCTION", "En producción"),
+                ("READY", "Listo para entregar"),
+                ("DELIVERED", "Entregado"),
+                ("CANCELLED", "Cancelado"),
+            ] {
+                assert!(html.contains(&format!("value=\"{value}\"")));
+                assert!(html.contains(label));
+            }
+        }
+        assert!(!html.contains("Unknown customer"));
+        assert!(!html.contains("Main navigation"));
         if path == format!("/orders/{order_id}") {
-            let html = String::from_utf8(body.to_vec()).unwrap();
-            assert!(html.contains("DELIVERED"));
+            assert!(html.contains(&format!("id=\"order-detail-{order_id}\"")));
+            for section in [
+                "Solicitud original",
+                "Entrega solicitada",
+                "Entrega acordada",
+                "Productos",
+                "Dimensiones",
+                "Madera",
+                "Acabado",
+                "Tareas del taller",
+                "Historial del pedido",
+                "Galería del proyecto",
+                "Ficha del cliente",
+            ] {
+                assert!(html.contains(section));
+            }
+            assert!(html.contains("Entregado"));
+            assert!(html.contains("Comprobante de entrega"));
+            assert!(html.contains("Pedido marcado como entregado"));
             assert!(html.contains(&format!("/attachments/{attachment_id}")));
         }
     }

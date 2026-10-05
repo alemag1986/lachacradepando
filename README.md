@@ -1,4 +1,4 @@
-# Woodshop
+# La Chacra de Pando
 
 Rust, Axum, Askama, HTMX and SQLite application for a small furniture shop. The production stack contains exactly two services: `woodshop` and Caddy. SQLite and photos persist in `./data:/data`; Caddy's certificates and configuration persist in named volumes.
 
@@ -31,9 +31,31 @@ Target is an Ubuntu DigitalOcean Droplet with Docker Engine and the Compose plug
 
 Production Compose publishes only Caddy on 80 and 443. The Rust listener is internal to Compose on port 8080. Caddy leaves only `/health` and the exact `/telegram/webhook` path without Basic Auth; webhook authenticity is enforced by Axum. Every dashboard route uses Caddy Basic Auth. Set `APP_ENV=production`; startup requires Telegram and OpenRouter configuration and an HTTPS base URL.
 
+### Provisioned deployment
+
+The approved target is `https://lachacradepando.magnati.dev`, on DigitalOcean Droplet
+`606182744` (`104.131.98.158`, `nyc3`, Ubuntu 24.04, 2 GB Basic, $12/month).
+The app resides at `/opt/lachacradepando`. Dedicated SSH key, known-hosts and provisioning
+state live only in ignored `.deploy/`; never commit or upload them to the Docker build.
+SSH is restricted by the cloud firewall to the provisioning connection's public IP.
+If that IP changes, update the firewall through the DigitalOcean console before SSH.
+
+`python3 scripts/prepare_release.py` creates a private **first-deployment-only** bundle,
+with a verified SQLite snapshot, photos and an explicit production environment allowlist.
+It does not copy the DigitalOcean admin token. Do not extract such a bundle over an
+existing production data directory: later releases must preserve the live database,
+photos and `.env`, replacing application code only after a verified backup.
+Stop local Telegram polling before running `python3 scripts/activate_telegram_webhook.py`;
+activation requires working production HTTPS and preserves queued updates.
+
 ## Backup and restore
 
 Run `./scripts/backup.sh` on the Docker host. It uses SQLite's online `.backup` API, snapshots photos, verifies SQLite integrity and SHA-256 hashes for every database/photo file, then writes a mode-600 archive under `backups/`. Retention keeps seven distinct calendar days and four distinct Sunday weeks. The portable archive helper uses Python 3's standard library, available by default on Ubuntu. Optional S3-compatible upload is available by setting `S3_DESTINATION` and installing/configuring the AWS CLI in the host environment. For accountless local Compose backup/restore, set `COMPOSE_FILE=docker-compose.local.yml` and `WOODSHOP_DATA_DIR` to the absolute directory used by `LOCAL_DATA_DIR`; this keeps operations isolated from native `./data`.
+
+The `ops/woodshop-backup.service` and `.timer` units schedule backups at 03:00 UTC daily
+with up to five minutes of randomized delay. Inspect `systemctl list-timers woodshop-backup.timer`
+and `journalctl -u woodshop-backup.service`. These are host-local backups, not paid
+DigitalOcean snapshots or off-host disaster recovery.
 
 Restore with `./scripts/restore.sh /absolute/path/to/backups/woodshop-YYYYMMDDTHHMMSSZ.tar.gz`. Python validates archive member types and paths before extraction; symlinks, hardlinks, devices, traversal and unexpected files are rejected. The target must be a data directory containing `woodshop.db` and `photos`, and cannot be a symlink, filesystem root, workspace root or home directory. After checksum and SQLite integrity checks, restore stops the writer and moves the complete data directory to a uniquely named sibling backup, preventing old SQLite WAL/SHM files from being reused. It preserves host UID/GID, recreates the app container against the replacement directory, verifies `/health`, and rolls back the data directory and app if startup fails. Keep off-host copies for disaster recovery; host-local retention alone does not protect against Droplet loss.
 

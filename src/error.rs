@@ -21,7 +21,7 @@ impl IntoResponse for AppError {
         tracing::error!("request failed");
         (
             StatusCode::INTERNAL_SERVER_ERROR,
-            "Request could not be completed",
+            "No se pudo completar la solicitud",
         )
             .into_response()
     }

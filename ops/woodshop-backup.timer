@@ -1,0 +1,11 @@
+[Unit]
+Description=Nightly La Chacra de Pando backup
+
+[Timer]
+OnCalendar=*-*-* 03:00:00 UTC
+RandomizedDelaySec=300
+Persistent=true
+Unit=woodshop-backup.service
+
+[Install]
+WantedBy=timers.target

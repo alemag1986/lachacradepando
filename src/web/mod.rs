@@ -44,18 +44,18 @@ struct WebError(StatusCode);
 impl IntoResponse for WebError {
     fn into_response(self) -> Response {
         let (status, title) = match self.0 {
-            StatusCode::NOT_FOUND => (StatusCode::NOT_FOUND, "Not found"),
-            StatusCode::BAD_REQUEST => (StatusCode::BAD_REQUEST, "Invalid request"),
-            StatusCode::FORBIDDEN => (StatusCode::FORBIDDEN, "Request rejected"),
+            StatusCode::NOT_FOUND => (StatusCode::NOT_FOUND, "Página no encontrada"),
+            StatusCode::BAD_REQUEST => (StatusCode::BAD_REQUEST, "Solicitud inválida"),
+            StatusCode::FORBIDDEN => (StatusCode::FORBIDDEN, "Solicitud rechazada"),
             _ => (
                 StatusCode::INTERNAL_SERVER_ERROR,
-                "Request could not be completed",
+                "No se pudo completar la solicitud",
             ),
         };
         (
             status,
             Html(format!(
-                "<!doctype html><title>{title}</title><p>{title}</p>"
+                "<!doctype html><html lang=\"es\"><meta charset=\"utf-8\"><title>{title} · La Chacra de Pando</title><p>{title}</p></html>"
             )),
         )
             .into_response()

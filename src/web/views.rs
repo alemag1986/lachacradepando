@@ -1,6 +1,112 @@
 use askama::Template;
 use sqlx::FromRow;
 
+pub fn status_label(status: &str) -> &'static str {
+    match status {
+        "NEW" => "Nuevo",
+        "CONFIRMED" => "Confirmado",
+        "IN_PRODUCTION" => "En producción",
+        "READY" => "Listo para entregar",
+        "DELIVERED" => "Entregado",
+        "CANCELLED" => "Cancelado",
+        "PENDING" => "Pendiente",
+        "DONE" => "Completada",
+        _ => "Sin especificar",
+    }
+}
+
+impl OrderRow {
+    pub fn status_label(&self) -> &'static str {
+        status_label(&self.status)
+    }
+}
+impl OrderDetail {
+    pub fn status_label(&self) -> &'static str {
+        status_label(&self.status)
+    }
+}
+impl OrderListTemplate {
+    pub fn status_label(&self, status: &str) -> &'static str {
+        status_label(status)
+    }
+}
+impl CustomerDetail {
+    pub fn language_label(&self) -> &'static str {
+        match self.preferred_language.as_deref() {
+            Some("es") => "Español",
+            Some("en") => "Inglés",
+            _ => "Sin especificar",
+        }
+    }
+}
+impl AttachmentRow {
+    pub fn label(&self) -> &'static str {
+        match self.kind.as_str() {
+            "ORDER_REFERENCE" => "Referencia del pedido",
+            "CUSTOMER_DRAWING" => "Dibujo del cliente",
+            "WORK_IN_PROGRESS" => "Trabajo en curso",
+            "FINISHED_PRODUCT" => "Producto terminado",
+            "DELIVERY_PROOF" => "Comprobante de entrega",
+            _ => "Otra foto",
+        }
+    }
+}
+impl EventRow {
+    pub fn label(&self) -> &'static str {
+        match self.event_type.as_str() {
+            "ORDER_CREATED" => "Pedido creado",
+            "STATUS_CHANGED" => "Cambio de estado",
+            "PROMISED_DATE_CHANGED" => "Cambio de fecha acordada",
+            "WORK_ITEM_ADDED" => "Tarea añadida",
+            "WORK_ITEM_STATUS_CHANGED" => "Cambio de estado de tarea",
+            "DELIVERED" => "Pedido entregado",
+            _ => "Actualización del pedido",
+        }
+    }
+    pub fn display_description(&self) -> String {
+        let description = self.description.as_deref().unwrap_or("");
+        let mut translated = description
+            .replace(
+                "Order created from Telegram extraction",
+                "Pedido creado desde Telegram",
+            )
+            .replace("Order marked delivered", "Pedido marcado como entregado")
+            .replace("Status changed from ", "Estado cambiado de ")
+            .replace(
+                "Promised delivery date changed from ",
+                "Fecha de entrega acordada cambiada de ",
+            )
+            .replace("Work task added: ", "Tarea añadida: ")
+            .replace("Work task ", "Tarea ");
+        if matches!(
+            self.event_type.as_str(),
+            "STATUS_CHANGED" | "PROMISED_DATE_CHANGED"
+        ) {
+            translated = translated
+                .replace(" to ", " a ")
+                .replace("unset", "sin definir");
+        }
+        if matches!(
+            self.event_type.as_str(),
+            "STATUS_CHANGED" | "WORK_ITEM_STATUS_CHANGED"
+        ) {
+            for status in [
+                "IN_PRODUCTION",
+                "CONFIRMED",
+                "CANCELLED",
+                "DELIVERED",
+                "PENDING",
+                "READY",
+                "DONE",
+                "NEW",
+            ] {
+                translated = translated.replace(status, status_label(status));
+            }
+        }
+        translated
+    }
+}
+
 #[derive(FromRow)]
 pub struct DashboardCounts {
     pub new_count: i64,
@@ -139,27 +245,33 @@ impl OrderRow {
             .unwrap_or("—")
     }
     pub fn customer(&self) -> &str {
-        self.customer_name.as_deref().unwrap_or("Unknown customer")
+        self.customer_name
+            .as_deref()
+            .unwrap_or("Cliente desconocido")
     }
 }
 impl OrderDetail {
     pub fn customer(&self) -> &str {
-        self.customer_name.as_deref().unwrap_or("Unknown customer")
+        self.customer_name
+            .as_deref()
+            .unwrap_or("Cliente desconocido")
     }
 }
 impl CustomerRow {
     pub fn display_name(&self) -> &str {
-        self.name.as_deref().unwrap_or("Unnamed customer")
+        self.name.as_deref().unwrap_or("Cliente sin nombre")
     }
 }
 impl CustomerDetail {
     pub fn display_name(&self) -> &str {
-        self.name.as_deref().unwrap_or("Unnamed customer")
+        self.name.as_deref().unwrap_or("Cliente sin nombre")
     }
 }
 impl DeliveryView {
     pub fn customer(&self) -> &str {
-        self.customer_name.as_deref().unwrap_or("Unknown customer")
+        self.customer_name
+            .as_deref()
+            .unwrap_or("Cliente desconocido")
     }
 }
 impl OrderFilters {

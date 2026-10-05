@@ -1,0 +1,10 @@
+[Unit]
+Description=La Chacra de Pando verified database and photo backup
+Requires=docker.service
+After=docker.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/lachacradepando
+ExecStart=/bin/bash /opt/lachacradepando/scripts/backup.sh
+UMask=0077

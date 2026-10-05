@@ -12,12 +12,14 @@ timestamp="$(date -u +%Y%m%dT%H%M%SZ)"
 stage="$(mktemp -d "$BACKUP_DIR/.woodshop-backup.XXXXXX")"
 archive="$BACKUP_DIR/woodshop-$timestamp.tar.gz"
 [[ ! -e "$archive" ]] || { echo "A backup already exists for this second; retry shortly" >&2; exit 1; }
-trap 'rm -rf -- "$stage"' EXIT
-
 # SQLite online backup API gives a consistent database image while writes continue.
-container_snapshot="/tmp/woodshop-backup-$timestamp-$$.db"
+snapshot_name=".woodshop-backup-$timestamp-$$.db"
+container_snapshot="/data/$snapshot_name"
+trap 'rm -f -- "$DATA_DIR/$snapshot_name"; rm -rf -- "$stage"' EXIT
 "${compose[@]}" exec -T woodshop sqlite3 /data/woodshop.db ".backup $container_snapshot"
-"${compose[@]}" cp "woodshop:$container_snapshot" "$stage/woodshop.db"
+# Docker's archive/cp API may not expose a container tmpfs mount. This snapshot
+# lives on the verified data bind mount, so copy its host path with private mode.
+install -m 600 "$DATA_DIR/$snapshot_name" "$stage/woodshop.db"
 "${compose[@]}" exec -T woodshop rm -f "$container_snapshot"
 sqlite3 "$stage/woodshop.db" 'PRAGMA integrity_check;' | grep -qx ok || { echo "SQLite integrity check failed" >&2; exit 1; }
 if [[ -d "$DATA_DIR/photos" ]]; then cp -a -- "$DATA_DIR/photos" "$stage/photos"; else mkdir "$stage/photos"; fi

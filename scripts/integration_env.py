@@ -58,6 +58,8 @@ def request_json(url, payload=None, bearer=None, timeout=30):
             content = response.read(8 * 1024 * 1024 + 1)
             if len(content) > 8 * 1024 * 1024:
                 raise RuntimeError("API response exceeded the limit")
+            if response.status == 204 and not content:
+                return {}
             return json.loads(content)
     except urllib.error.HTTPError as error:
         raise RuntimeError(f"API returned HTTP {error.code}") from None
